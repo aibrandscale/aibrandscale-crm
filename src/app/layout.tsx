@@ -8,8 +8,17 @@ export const metadata: Metadata = {
   description: "Sales CRM за aibrandscale: leads и насрочени разговори.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentProfile();
+  // getCurrentProfile reads cookies + Supabase. If env is missing (e.g. during a
+  // pre-render build with no envs available), fall back to no user.
+  let user: Awaited<ReturnType<typeof getCurrentProfile>> = null;
+  try {
+    user = await getCurrentProfile();
+  } catch {
+    user = null;
+  }
   return (
     <html lang="bg">
       <body>
