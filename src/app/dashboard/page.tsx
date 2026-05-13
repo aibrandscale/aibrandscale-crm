@@ -1,13 +1,12 @@
 import Link from "next/link";
 import {
-  MOCK_CALLS,
   STATUS_LABEL,
   STATUS_COLOR,
   type Lead,
-  type Call,
 } from "@/lib/mock-data";
 import { getAllLeads } from "@/lib/leads-store";
 import { getAllEvents } from "@/lib/events-store";
+import { listAllBookings, type Booking } from "@/lib/booking-store";
 import { formatDateTime, relativeTime, formatTime, formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +14,13 @@ export const dynamic = "force-dynamic";
 const DAY_MS = 86_400_000;
 
 export default async function DashboardPage() {
-  const [leadsList, events] = await Promise.all([getAllLeads(), getAllEvents()]);
+  const [leadsList, events, bookings] = await Promise.all([
+    getAllLeads(),
+    getAllEvents(),
+    listAllBookings(),
+  ]);
   const leads: Lead[] = leadsList;
-  const calls: Call[] = [...MOCK_CALLS].sort(
-    (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime(),
-  );
+  const calls: Booking[] = bookings;
 
   const now = Date.now();
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
   const qualified = leads.filter((l) => l.status === "qualified").length;
   const newCount = leads.filter((l) => l.status === "new").length;
 
-  const upcoming = calls.filter((c) => c.status === "scheduled" && new Date(c.startAt).getTime() > now);
+  const upcoming = calls.filter((c) => c.status === "confirmed" && new Date(c.startAt).getTime() > now);
   const callsToday = calls.filter((c) => c.startAt.slice(0, 10) === todayKey).length;
   const completed = calls.filter((c) => c.status === "completed").length;
   const noShow = calls.filter((c) => c.status === "no_show").length;
@@ -126,13 +127,13 @@ export default async function DashboardPage() {
                 >
                   <DateBubble iso={c.startAt} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: 14 }}>{c.leadName}</div>
+                    <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: 14 }}>{c.guestName}</div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                      {formatTime(c.startAt)} · {c.durationMin} мин · {c.hostName}
+                      {formatTime(c.startAt)} · {c.durationMin} мин
                     </div>
                   </div>
                   <a
-                    href={c.meetingUrl}
+                    href={c.meetingUrl ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{

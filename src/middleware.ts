@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 const PUBLIC_PATHS = new Set(["/login", "/auth/callback"]);
-const PUBLIC_API_PREFIXES = ["/api/auth/", "/api/webhooks/"];
+const PUBLIC_PATH_PREFIXES = ["/book/"];
+const PUBLIC_API_PREFIXES = ["/api/auth/", "/api/webhooks/", "/api/booking/create"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -16,7 +17,11 @@ export async function middleware(req: NextRequest) {
   // If supabase isn't configured yet, redirect everything except /login to /login
   // so the app doesn't crash during initial setup.
   if (!url || !anon) {
-    if (pathname === "/login" || PUBLIC_API_PREFIXES.some((p) => pathname.startsWith(p))) {
+    if (
+      PUBLIC_PATHS.has(pathname) ||
+      PUBLIC_PATH_PREFIXES.some((p) => pathname.startsWith(p)) ||
+      PUBLIC_API_PREFIXES.some((p) => pathname.startsWith(p))
+    ) {
       return response;
     }
     const redirect = req.nextUrl.clone();
@@ -44,7 +49,11 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (PUBLIC_PATHS.has(pathname) || PUBLIC_API_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (
+    PUBLIC_PATHS.has(pathname) ||
+    PUBLIC_PATH_PREFIXES.some((p) => pathname.startsWith(p)) ||
+    PUBLIC_API_PREFIXES.some((p) => pathname.startsWith(p))
+  ) {
     return response;
   }
 
